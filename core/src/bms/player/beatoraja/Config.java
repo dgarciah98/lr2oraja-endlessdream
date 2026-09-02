@@ -144,6 +144,8 @@ public class Config implements Validatable {
 
 	private String soundpath = "sound";
 
+	private boolean enableUserBgmSoundPaths = false;
+
 	private String systemfontpath = "font/VL-Gothic-Regular.ttf";
 	private String messagefontpath = "font/VL-Gothic-Regular.ttf";
 	/**
@@ -456,6 +458,14 @@ public class Config implements Validatable {
 
 	public void setSoundpath(String soundpath) {
 		this.soundpath = soundpath;
+	}
+
+	public boolean getEnableUserBgmSoundPaths() {
+		return enableUserBgmSoundPaths;
+	}
+
+	public void setEnableUserBgmSoundPaths(boolean enable) {
+		this.enableUserBgmSoundPaths = enable;
 	}
 
 	public int getMaxSearchBarCount() {

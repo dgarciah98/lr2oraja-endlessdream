@@ -44,11 +44,19 @@ public class SystemSoundManager {
 	public SystemSoundManager(MainController main) {
 		this.main = main;
 		Config config = main.getConfig();
-		if(config.getBgmpath() != null && config.getBgmpath().length() > 0) {
-			scan(Paths.get(config.getBgmpath()).toAbsolutePath(), bgms, "select.wav");
+		String bgmpath = config.getBgmpath();
+		String soundpath = config.getSoundpath();
+		if (config.getEnableUserBgmSoundPaths()) {
+			PlayerConfig pc = main.getPlayerConfig();
+			bgmpath = pc.getBgmpath();
+			soundpath = pc.getSoundpath();
 		}
-		if(config.getSoundpath() != null && config.getSoundpath().length() > 0) {
-			scan(Paths.get(config.getSoundpath()).toAbsolutePath(), sounds, "clear.wav");
+
+		if(bgmpath != null && bgmpath.length() > 0) {
+			scan(Paths.get(bgmpath).toAbsolutePath(), bgms, "select.wav");
+		}
+		if(soundpath != null && soundpath.length() > 0) {
+			scan(Paths.get(soundpath).toAbsolutePath(), sounds, "clear.wav");
 		}
 		logger.info("検出されたBGM Set : {} Sound Set : {}", bgms.size, sounds.size);
 	}

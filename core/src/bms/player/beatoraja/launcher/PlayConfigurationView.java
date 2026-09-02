@@ -167,6 +167,8 @@ public class PlayConfigurationView implements Initializable {
 	private TextField bgmpath;
 	@FXML
 	private TextField soundpath;
+	@FXML
+	private CheckBox enableUserBgmSoundPaths;
 
 	@FXML
 	private NumericSpinner<Integer> notesdisplaytiming;
@@ -476,8 +478,11 @@ public class PlayConfigurationView implements Initializable {
 		audioController.update(config.getAudioConfig());
 		musicselectController.update(config);
 
-		bgmpath.setText(config.getBgmpath());
-		soundpath.setText(config.getSoundpath());
+		enableUserBgmSoundPaths.setSelected(config.getEnableUserBgmSoundPaths());
+		if (!config.getEnableUserBgmSoundPaths()) {
+			bgmpath.setText(config.getBgmpath());
+			soundpath.setText(config.getSoundpath());
+		}
 
 		resourceController.update(config);
 		discordController.update(config);
@@ -607,6 +612,11 @@ public class PlayConfigurationView implements Initializable {
 			txtTwitterAuthenticated.setVisible(false);
 		}
 
+		if (config.getEnableUserBgmSoundPaths()) {
+			bgmpath.setText(player.getBgmpath());
+			soundpath.setText(player.getSoundpath());
+		}
+
 		pc = null;
 		playconfig.setValue(PlayMode.BEAT_7K);
 		updatePlayConfig();
@@ -625,8 +635,11 @@ public class PlayConfigurationView implements Initializable {
 
 		config.setPlayername(players.getValue());
 
-		config.setBgmpath(bgmpath.getText());
-		config.setSoundpath(soundpath.getText());
+		config.setEnableUserBgmSoundPaths(enableUserBgmSoundPaths.isSelected());
+		if (!config.getEnableUserBgmSoundPaths()) {
+			config.setBgmpath(bgmpath.getText());
+			config.setSoundpath(soundpath.getText());
+		}
 
 		resourceController.commit();
 		discordController.commit();
@@ -704,6 +717,11 @@ public class PlayConfigurationView implements Initializable {
 
 		player.setShowhiddennote(showhiddennote.isSelected());
 		player.setShowpastnote(showpastnote.isSelected());
+
+		if (config.getEnableUserBgmSoundPaths()) {
+			player.setBgmpath(bgmpath.getText());
+			player.setSoundpath(soundpath.getText());
+		}
 
 		inputController.commit();
 		irController.commit();

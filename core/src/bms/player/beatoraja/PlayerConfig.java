@@ -247,6 +247,10 @@ public final class PlayerConfig {
 
 	private String twitterAccessTokenSecret;
 
+	private String bgmpath = "bgmpath/" + this.name;
+
+	private String soundpath = "soundpath/" + this.name;
+
 	// -- Stream
 	private boolean enableRequest = false;
 	private boolean notifyRequest = false;
@@ -1153,4 +1157,12 @@ public final class PlayerConfig {
 	public void setChartReplicationMode(String chartReplicationMode) {
 		this.chartReplicationMode = chartReplicationMode;
 	}
+
+	public String getBgmpath() { return this.bgmpath; }
+
+	public void setBgmpath(String bgmpath) { this.bgmpath = bgmpath; }
+
+	public String getSoundpath() { return this.soundpath; }
+
+	public void setSoundpath(String soundpath) { this.soundpath = soundpath; }
 }

@@ -364,6 +364,7 @@ public class MainController {
 		player = pc;
 
 		playdata = new PlayDataAccessor(config);
+		sound = new SystemSoundManager(this);
 
 		initializeIRConfig();
 		// Dispose MusicSelector to unallocate loaded skin

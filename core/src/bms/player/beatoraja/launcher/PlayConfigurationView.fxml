@@ -356,6 +356,13 @@
                   </children>
                </AnchorPane>
                     <HBox prefHeight="30.0" prefWidth="723.0">
+                        <CheckBox fx:id="enableUserBgmSoundPaths" mnemonicParsing="false" text="%ENABLE_USER_BGM_SOUND_PATHS" layoutX="10.0" layoutY="10.0" prefHeight="30.0">
+                            <HBox.margin>
+                                <Insets left="10.0" right="10.0" top="10.0" />
+                            </HBox.margin>
+                        </CheckBox>
+                    </HBox>
+                    <HBox prefHeight="30.0" prefWidth="723.0">
                         <Label layoutX="10.0" layoutY="10.0" prefHeight="30.0" prefWidth="200.0" text="%BGM_Path(LR2)">
                             <HBox.margin>
                                 <Insets left="10.0" right="10.0" top="10.0" />
