@@ -77,6 +77,7 @@ public class MainLoader extends Application {
 			e.printStackTrace();
 		}
 
+		Config config = null;
 		BMSPlayerMode auto = null;
 		for (String s : args) {
 			if (s.startsWith("-")) {
@@ -101,8 +102,14 @@ public class MainLoader extends Application {
 				if (s.equals("-s")) {
 					auto = BMSPlayerMode.PLAY;
 				}
+				if (s.equals("-user")) {
+					config = readConfig();
+				}
 			} else {
-				bmsPath = Paths.get(s);
+				if (Files.exists(Paths.get(config.getPlayerpath() + "/" + s))) {
+					config.setPlayername(s);
+				}
+				else bmsPath = Paths.get(s);
 				if(auto == null) {
 					auto = BMSPlayerMode.PLAY;
 				}
@@ -115,25 +122,31 @@ public class MainLoader extends Application {
 			IRConnectionManager.getAllAvailableIRConnectionName();
 			if (UIUtils.isMac) {
 				BMSPlayerMode finalAuto = auto;
+				Config finalConfig = config;
 				Platform.runLater(() -> {
-					play(bmsPath, finalAuto, true, null, null, bmsPath != null);
+					play(bmsPath, finalAuto, true, finalConfig, null, bmsPath != null);
 				});
 			} else {
-				play(bmsPath, auto, true, null, null, bmsPath != null);
+				play(bmsPath, auto, true, config, null, bmsPath != null);
 			}
 		} else {
 			launch(args);
 		}
 	}
 
+	private static Config readConfig() {
+		try {
+			return Config.read();
+		} catch (PlayerConfigException e) {
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
+	}
+
 	public static void play(Path bmsPath, BMSPlayerMode playerMode, boolean forceExit, Config config, PlayerConfig player, boolean songUpdated) {
 		//configuratorStage.setIconified(true);
 		if(config == null) {
-            try {
-                config = Config.read();
-            } catch (PlayerConfigException e) {
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            config = readConfig();
         }
 
         for (SongData song : getScoreDatabaseAccessor().getSongDatas(SongUtils.illegalsongs)) {
