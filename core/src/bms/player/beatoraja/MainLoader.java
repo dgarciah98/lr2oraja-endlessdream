@@ -106,12 +106,14 @@ public class MainLoader extends Application {
 					config = readConfig();
 				}
 			} else {
-				if (Files.exists(Paths.get(config.getPlayerpath() + "/" + s))) {
+				if (config != null && Files.exists(Paths.get(config.getPlayerpath() + "/" + s))) {
 					config.setPlayername(s);
 				}
-				else bmsPath = Paths.get(s);
-				if(auto == null) {
-					auto = BMSPlayerMode.PLAY;
+				else {
+					bmsPath = Paths.get(s);
+					if (auto == null) {
+						auto = BMSPlayerMode.PLAY;
+					}
 				}
 			}
 		}
