@@ -6,6 +6,7 @@ import java.nio.file.*;
 import bms.player.beatoraja.AudioConfig;
 import com.portaudio.*;
 import bms.player.beatoraja.Config;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
  * @author exch
  */
 public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnable {
+	private static final Logger logger = LoggerFactory.getLogger(PortAudioDriver.class);
 
 	private static DeviceInfo[] devices;
 	
@@ -71,7 +73,7 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 		StreamParameters streamParameters = new StreamParameters();
 		StreamParameters surroundParams = new StreamParameters();
 
-		streamParameters.channelCount = channels;
+		streamParameters.channelCount = channels; // 2 channels by default, stereo L and R
 		streamParameters.device = deviceId;
 		int framesPerBuffer = audioConfig.getDeviceBufferSize();
 		streamParameters.suggestedLatency = ((double)framesPerBuffer) / getSampleRate();
@@ -86,9 +88,11 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 			surroundParams.suggestedLatency = deviceInfo.defaultLowOutputLatency;
 			int res = PortAudio.isFormatSupported(null, surroundParams, getSampleRate());
 			if (res == 0) {
-				this.channels = 8;
+				this.channels = surroundParams.channelCount;
+				logger.info("Opening stream for Surround Audio with: Device=" + deviceInfo + ", Channels=" + this.channels);
 				stream = PortAudio.openStream(null, surroundParams, getSampleRate(), framesPerBuffer, flags);
 			} else {
+				logger.warn("Stream format for Surround Audio is not supported, defaulting to stereo");
 				stream = PortAudio.openStream(null, streamParameters, getSampleRate(), framesPerBuffer, flags);
 			}
 		} else {
