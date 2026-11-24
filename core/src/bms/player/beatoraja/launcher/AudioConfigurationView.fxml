@@ -66,6 +66,16 @@
 		</Label>
 		<ComboBox fx:id="audiosamplerate" prefWidth="150.0" />
 	</HBox>
+	<HBox prefHeight="40.0" prefWidth="300.0">
+		<CheckBox fx:id="useSurroundAudio" onAction="#updateSurroundSystem" prefHeight="24.0" prefWidth="300.0" text="%USE_SURROUND_AUDIO"/>
+		<Label prefHeight="23.0" prefWidth="150.0"
+			   text="%SURROUND_SYSTEM">
+			<HBox.margin>
+				<Insets left="10.0" />
+			</HBox.margin>
+		</Label>
+		<ComboBox fx:id="surroundSystem" prefWidth="150.0" />
+	</HBox>
 	<HBox prefHeight="30.0" prefWidth="730.0">
 		<Label prefHeight="25.0" prefWidth="150.0" text="%SYSTEM_VOLUME" />
 		<Slider fx:id="systemVolumeSlider" blockIncrement="0.1"

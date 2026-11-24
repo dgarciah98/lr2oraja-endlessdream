@@ -59,6 +59,10 @@ public class AudioConfigurationView implements Initializable {
 	private CheckBox loopResultSound;
 	@FXML
 	private CheckBox loopCourseResultSound;
+	@FXML
+	private CheckBox useSurroundAudio;
+	@FXML
+	private ComboBox<String> surroundSystem;
 
 	private AudioConfig config;
 
@@ -66,6 +70,7 @@ public class AudioConfigurationView implements Initializable {
 	public void initialize(URL arg0, ResourceBundle arg1) {
 		audio.getItems().setAll(DriverType.OpenAL , DriverType.PortAudio);
 		audiosamplerate.getItems().setAll(null, 44100, 48000);
+		surroundSystem.getItems().setAll("7.1", "5.1");
 
 		audioFreqOption.getItems().setAll(FrequencyType.UNPROCESSED , FrequencyType.FREQUENCY);
 		audioFastForward.getItems().setAll(FrequencyType.UNPROCESSED , FrequencyType.FREQUENCY);
@@ -90,7 +95,8 @@ public class AudioConfigurationView implements Initializable {
 		normalizeVolume.setSelected(config.isNormalizeVolume());
 		loopResultSound.setSelected(config.isLoopResultSound());
 		loopCourseResultSound.setSelected(config.isLoopCourseResultSound());
-
+		useSurroundAudio.setSelected(config.useSurroundAudio());
+		surroundSystem.setValue(config.getSurroundSystem());
 		updateAudioDriver();
 		updateNormalizeVolume();
 	}
@@ -109,6 +115,8 @@ public class AudioConfigurationView implements Initializable {
 		config.setNormalizeVolume(normalizeVolume.isSelected());
 		config.setLoopResultSound(loopResultSound.isSelected());
 		config.setLoopCourseResultSound(loopCourseResultSound.isSelected());
+		config.setUseSurroundAudio(useSurroundAudio.isSelected());
+		config.setSurroundSystem(surroundSystem.getValue());
 	}
 
 	@FXML
@@ -118,6 +126,12 @@ public class AudioConfigurationView implements Initializable {
 		keyVolumeSpinner.setDisable(enabled);
 		bgVolumeSlider.setDisable(enabled);
 		bgVolumeSpinner.setDisable(enabled);
+	}
+
+	@FXML
+	public void updateSurroundSystem() {
+		boolean enabled = !useSurroundAudio.isSelected();
+		surroundSystem.setDisable(enabled);
 	}
 
     @FXML

@@ -68,6 +68,10 @@ public class AudioConfig implements Validatable {
 	 */
 	private boolean isLoopCourseResultSound = false;
 
+	private boolean useSurroundAudio = false;
+
+	private String surroundSystem = "7.1";
+
 	public DriverType getDriver() {
 		return driver;
 	}
@@ -189,7 +193,23 @@ public class AudioConfig implements Validatable {
 		bgvolume = MathUtils.clamp(bgvolume, 0f, 1f);
 		return true;
 	}
-	
+
+	public boolean useSurroundAudio() {
+		return useSurroundAudio;
+	}
+
+	public void setUseSurroundAudio(boolean allowSurroundAudio) {
+		this.useSurroundAudio = allowSurroundAudio;
+	}
+
+	public String getSurroundSystem() {
+		return surroundSystem;
+	}
+
+	public void setSurroundSystem(String surroundSystem) {
+		this.surroundSystem = surroundSystem;
+	}
+
 	public enum DriverType {
 
 		/**

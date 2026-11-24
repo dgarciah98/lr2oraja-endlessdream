@@ -3,8 +3,10 @@ package bms.player.beatoraja.audio;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
 
+import bms.player.beatoraja.AudioConfig;
 import com.portaudio.*;
 import bms.player.beatoraja.Config;
+import org.slf4j.LoggerFactory;
 
 /**
  * PortAudioドライバ
@@ -25,10 +27,14 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 	private long idcount;
 	
 	private boolean stop = false;
-	
+
 	private final float[] buffer;
 	
 	private final Thread mixer;
+
+	private final AudioConfig audioConfig;
+
+	private int channels = 2;
 
 	public static DeviceInfo[] getDevices() {
 		if(devices == null) {
@@ -44,40 +50,55 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 
 	public PortAudioDriver(Config config) {
 		super(config.getSongResourceGen());
+		audioConfig = config.getAudioConfig();
 		DeviceInfo[] devices = getDevices();
 		// Get the default device and setup the stream parameters.
 		int deviceId = 0;
 		for(int i = 0;i < devices.length;i++) {
-			if(devices[i].name.equals(config.getAudioConfig().getDriverName())) {
+			if(devices[i].name.equals(audioConfig.getDriverName())) {
 				deviceId = i;
 				break;
 			}
 		}
 		DeviceInfo deviceInfo = devices[ deviceId ];
 		
-		setSampleRate(config.getAudioConfig().getSampleRate() <= 0 ? (int)deviceInfo.defaultSampleRate : config.getAudioConfig().getSampleRate());
-		channels = 2;
+		setSampleRate(audioConfig.getSampleRate() <= 0 ? (int)deviceInfo.defaultSampleRate : audioConfig.getSampleRate());
+
 //		System.out.println( "  deviceId    = " + deviceId );
 //		System.out.println( "  sampleRate  = " + sampleRate );
 //		System.out.println( "  device name = " + deviceInfo.name );
 
 		StreamParameters streamParameters = new StreamParameters();
+		StreamParameters surroundParams = new StreamParameters();
+
 		streamParameters.channelCount = channels;
 		streamParameters.device = deviceId;
-		int framesPerBuffer = config.getAudioConfig().getDeviceBufferSize();
+		int framesPerBuffer = audioConfig.getDeviceBufferSize();
 		streamParameters.suggestedLatency = ((double)framesPerBuffer) / getSampleRate();
 //		System.out.println( "  suggestedLatency = " + streamParameters.suggestedLatency );
 
 		int flags = 0;
 		
 		// Open a stream for output.
-		stream = PortAudio.openStream( null, streamParameters, getSampleRate(), framesPerBuffer, flags );
-
+		if (audioConfig.useSurroundAudio()) {
+			surroundParams.channelCount = deviceInfo.maxOutputChannels;
+			surroundParams.device = deviceId;
+			surroundParams.suggestedLatency = deviceInfo.defaultLowOutputLatency;
+			int res = PortAudio.isFormatSupported(null, surroundParams, getSampleRate());
+			if (res == 0) {
+				this.channels = 8;
+				stream = PortAudio.openStream(null, surroundParams, getSampleRate(), framesPerBuffer, flags);
+			} else {
+				stream = PortAudio.openStream(null, streamParameters, getSampleRate(), framesPerBuffer, flags);
+			}
+		} else {
+			stream = PortAudio.openStream( null, streamParameters, getSampleRate(), framesPerBuffer, flags);
+		}
 		stream.start();
 
 		mixer = new Thread(this);
 		buffer = new float[framesPerBuffer * channels];
-		inputs = new MixerInput[config.getAudioConfig().getDeviceSimultaneousSources()];
+		inputs = new MixerInput[audioConfig.getDeviceSimultaneousSources()];
 		for (int i = 0; i < inputs.length; i++) {
 			inputs[i] = new MixerInput();
 		}
@@ -187,7 +208,7 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 		while(!stop) {
 			final float gpitch = getGlobalPitch();
 			synchronized (inputs) {
-				for (int i = 0; i < buffer.length; i+=2) {
+				for (int i = 0; i < buffer.length; i+=this.channels) {
 					float wav_l = 0;
 					float wav_r = 0;
 					for (MixerInput input : inputs) {
@@ -202,8 +223,11 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 								wav_r += ((float) sample.getShort((input.pos+1 + input.pcm.start) * 2)) * input.volume / Short.MAX_VALUE;																
 							} else if(input.pcm instanceof ShortPCM) {
 								final short[] sample = (short[]) input.pcm.sample;
-								wav_l += ((float) sample[input.pos + input.pcm.start]) * input.volume / Short.MAX_VALUE;
-								wav_r += ((float) sample[input.pos+1 + input.pcm.start]) * input.volume / Short.MAX_VALUE;																
+								// ignore if position goes over sample length
+								if(!(input.pos+1 >= sample.length)) {
+									wav_l += ((float) sample[(input.pos + input.pcm.start)]) * input.volume / Short.MAX_VALUE;
+									wav_r += ((float) sample[(input.pos+1 + input.pcm.start)]) * input.volume / Short.MAX_VALUE;
+								}
 							} else if(input.pcm instanceof BytePCM) {
 								final byte[] sample = (byte[]) input.pcm.sample;
 								wav_l += ((float) (sample[input.pos + input.pcm.start] - 128)) * input.volume / Byte.MAX_VALUE;
@@ -220,13 +244,26 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 							}
 						}
 					}
-					buffer[i] = wav_l;
-					buffer[i+1] = wav_r;
+
+					if (audioConfig.useSurroundAudio()) {
+						switch (audioConfig.getSurroundSystem()) {
+							case "7.1", "5.1":
+							default:
+								for (int ch = 0; ch < this.channels; ch += 2) {
+									// Valid for stereo and 7.1/5.1 surround systems
+									buffer[i + ch] = wav_l;
+									buffer[i + ch + 1] = wav_r;
+								}
+						}
+					} else {
+						buffer[i] = wav_l;
+						buffer[i+1] = wav_r;
+					}
 				}						
 			}
 			
 			try {
-				stream.write( buffer, buffer.length / 2);
+				stream.write( buffer, buffer.length / channels);
 			} catch(Throwable e) {
 				e.printStackTrace();
 			}
