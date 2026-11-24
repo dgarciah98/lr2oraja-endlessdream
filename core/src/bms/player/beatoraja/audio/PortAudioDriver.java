@@ -85,7 +85,7 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 		if (audioConfig.useSurroundAudio()) {
 			surroundParams.channelCount = deviceInfo.maxOutputChannels;
 			surroundParams.device = deviceId;
-			surroundParams.suggestedLatency = deviceInfo.defaultLowOutputLatency;
+			surroundParams.suggestedLatency = streamParameters.suggestedLatency;
 			int res = PortAudio.isFormatSupported(null, surroundParams, getSampleRate());
 			if (res == 0) {
 				this.channels = surroundParams.channelCount;
@@ -209,6 +209,7 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 	}
 
 	public void run() {
+		String surroundSystem = audioConfig.useSurroundAudio() ? audioConfig.getSurroundSystem() : "";
 		while(!stop) {
 			final float gpitch = getGlobalPitch();
 			synchronized (inputs) {
@@ -249,19 +250,16 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 						}
 					}
 
-					if (audioConfig.useSurroundAudio()) {
-						switch (audioConfig.getSurroundSystem()) {
-							case "7.1", "5.1":
-							default:
-								for (int ch = 0; ch < this.channels; ch += 2) {
-									// Valid for stereo and 7.1/5.1 surround systems
-									buffer[i + ch] = wav_l;
-									buffer[i + ch + 1] = wav_r;
-								}
-						}
-					} else {
-						buffer[i] = wav_l;
-						buffer[i+1] = wav_r;
+					// Buffer filling logic depending on selected surround system and channels
+					// Defaults to filling buffer for 2 channels (stereo)
+					switch (surroundSystem) {
+						case "7.1", "5.1":
+						default:
+							for (int ch = 0; ch < this.channels; ch += 2) {
+								// Valid for stereo and 7.1/5.1 surround systems
+								buffer[i + ch] = wav_l;
+								buffer[i + ch + 1] = wav_r;
+							}
 					}
 				}						
 			}
