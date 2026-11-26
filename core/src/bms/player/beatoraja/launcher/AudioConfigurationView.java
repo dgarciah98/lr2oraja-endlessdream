@@ -70,7 +70,7 @@ public class AudioConfigurationView implements Initializable {
 	public void initialize(URL arg0, ResourceBundle arg1) {
 		audio.getItems().setAll(DriverType.OpenAL , DriverType.PortAudio);
 		audiosamplerate.getItems().setAll(null, 44100, 48000);
-		surroundSystem.getItems().setAll("7.1", "5.1");
+		surroundSystem.getItems().setAll("Upmix 7.1", "Upmix 5.1");
 
 		audioFreqOption.getItems().setAll(FrequencyType.UNPROCESSED , FrequencyType.FREQUENCY);
 		audioFastForward.getItems().setAll(FrequencyType.UNPROCESSED , FrequencyType.FREQUENCY);
@@ -115,7 +115,7 @@ public class AudioConfigurationView implements Initializable {
 		config.setNormalizeVolume(normalizeVolume.isSelected());
 		config.setLoopResultSound(loopResultSound.isSelected());
 		config.setLoopCourseResultSound(loopCourseResultSound.isSelected());
-		config.setUseSurroundAudio(useSurroundAudio.isSelected());
+		config.setUseSurroundAudio(useSurroundAudio.isSelected() && !useSurroundAudio.isDisabled());
 		config.setSurroundSystem(surroundSystem.getValue());
 	}
 
@@ -142,6 +142,8 @@ public class AudioConfigurationView implements Initializable {
 			audioname.getItems().clear();
 			audiobuffer.setDisable(false);
 			audiosim.setDisable(false);
+			useSurroundAudio.setDisable(true);
+			surroundSystem.setDisable(true);
 			break;
 		case PortAudio:
 			try {
@@ -162,6 +164,9 @@ public class AudioConfigurationView implements Initializable {
 				audioname.setDisable(false);
 				audiobuffer.setDisable(false);
 				audiosim.setDisable(false);
+				useSurroundAudio.setDisable(false);
+				surroundSystem.setDisable(!useSurroundAudio.isSelected());
+
 //				PortAudio.terminate();
 			} catch(Throwable e) {
 				logger.error("PortAudioは選択できません : {}", e.getMessage());

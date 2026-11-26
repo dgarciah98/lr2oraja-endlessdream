@@ -70,7 +70,7 @@ public class AudioConfig implements Validatable {
 
 	private boolean useSurroundAudio = false;
 
-	private String surroundSystem = "7.1";
+	private String surroundSystem = "Upmix 7.1";
 
 	public DriverType getDriver() {
 		return driver;

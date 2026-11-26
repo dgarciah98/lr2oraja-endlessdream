@@ -34,9 +34,7 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 	
 	private final Thread mixer;
 
-	private final AudioConfig audioConfig;
-
-	private int channels = 2;
+	private SurroundSystem surroundSystem = SurroundSystem.STEREO;
 
 	public static DeviceInfo[] getDevices() {
 		if(devices == null) {
@@ -52,7 +50,7 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 
 	public PortAudioDriver(Config config) {
 		super(config.getSongResourceGen());
-		audioConfig = config.getAudioConfig();
+		AudioConfig audioConfig = config.getAudioConfig();
 		DeviceInfo[] devices = getDevices();
 		// Get the default device and setup the stream parameters.
 		int deviceId = 0;
@@ -73,7 +71,7 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 		StreamParameters streamParameters = new StreamParameters();
 		StreamParameters surroundParams = new StreamParameters();
 
-		streamParameters.channelCount = channels; // 2 channels by default, stereo L and R
+		streamParameters.channelCount = 2; // 2 channels by default, stereo L and R
 		streamParameters.device = deviceId;
 		int framesPerBuffer = audioConfig.getDeviceBufferSize();
 		streamParameters.suggestedLatency = ((double)framesPerBuffer) / getSampleRate();
@@ -87,9 +85,9 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 			surroundParams.device = deviceId;
 			surroundParams.suggestedLatency = streamParameters.suggestedLatency;
 			int res = PortAudio.isFormatSupported(null, surroundParams, getSampleRate());
-			if (res == 0) {
-				this.channels = surroundParams.channelCount;
-				logger.info("Opening stream for Surround Audio with: Device=" + deviceInfo + ", Channels=" + this.channels);
+			if (res == 0 && surroundParams.channelCount > 2) {
+				surroundSystem = SurroundSystem.getSurround(audioConfig.getSurroundSystem());
+				logger.info("Opening stream for Surround Audio with: Device=" + deviceInfo + ", Channels=" + surroundSystem.channels);
 				stream = PortAudio.openStream(null, surroundParams, getSampleRate(), framesPerBuffer, flags);
 			} else {
 				logger.warn("Stream format for Surround Audio is not supported, defaulting to stereo");
@@ -101,7 +99,7 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 		stream.start();
 
 		mixer = new Thread(this);
-		buffer = new float[framesPerBuffer * channels];
+		buffer = new float[framesPerBuffer * surroundSystem.channels];
 		inputs = new MixerInput[audioConfig.getDeviceSimultaneousSources()];
 		for (int i = 0; i < inputs.length; i++) {
 			inputs[i] = new MixerInput();
@@ -209,11 +207,11 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 	}
 
 	public void run() {
-		String surroundSystem = audioConfig.useSurroundAudio() ? audioConfig.getSurroundSystem() : "";
+		int channels = surroundSystem.channels;
 		while(!stop) {
 			final float gpitch = getGlobalPitch();
 			synchronized (inputs) {
-				for (int i = 0; i < buffer.length; i+=this.channels) {
+				for (int i = 0; i < buffer.length; i+=channels) {
 					float wav_l = 0;
 					float wav_r = 0;
 					for (MixerInput input : inputs) {
@@ -253,12 +251,13 @@ public class PortAudioDriver extends AbstractAudioDriver<PCM> implements Runnabl
 					// Buffer filling logic depending on selected surround system and channels
 					// Defaults to filling buffer for 2 channels (stereo)
 					switch (surroundSystem) {
-						case "7.1", "5.1":
+						case FIVE_POINT_ONE, SEVEN_POINT_ONE:
 						default:
-							for (int ch = 0; ch < this.channels; ch += 2) {
-								// Valid for stereo and 7.1/5.1 surround systems
-								buffer[i + ch] = wav_l;
-								buffer[i + ch + 1] = wav_r;
+							// Valid for stereo and upmixing 7.1/5.1 surround systems
+							for (int ch = 0; ch < channels; ch += 2) {
+								// Assuming ch = 2 and ch = 3 corresponds to Center and LFE channels respectively
+								buffer[i + ch] = ch == 2 ? wav_l/2 + wav_r/2 : wav_l;
+								buffer[i + ch + 1] = ch == 2 ? wav_l/2 + wav_r/2 : wav_r;
 							}
 					}
 				}						
